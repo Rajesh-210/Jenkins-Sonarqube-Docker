@@ -37,9 +37,9 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
-                waitForQualityGate abortPipeline: true
-             }
-           }
+                    waitForQualityGate abortPipeline: true
+                }
+            }
         }
 
         stage('Build and Deploy') {
@@ -59,6 +59,10 @@ pipeline {
                            tar -xzf - -C /opt/app-ci &&
                            cd /opt/app-ci &&
                            docker build -t $APP_NAME:$BUILD_NUMBER . &&
+                           TMPDIR=/var/tmp/trivy-tmp trivy image \
+                             --severity HIGH,CRITICAL \
+                             --exit-code 1 \
+                             $APP_NAME:$BUILD_NUMBER &&
                            (docker rm -f $APP_NAME || true) &&
                            docker run -d \
                              --name $APP_NAME \
@@ -80,4 +84,3 @@ pipeline {
         }
     }
 }
-
